@@ -585,6 +585,253 @@ Monthly stake: £50
 
 ---
 
+## 💎 Higher Staking & Bankroll Examples
+
+**For established bettors ready to scale up after validation.**
+
+### **Profile 1: Medium Staking** 💷
+
+**Target**: £500/month stakes, £10-30 per bet
+
+```
+Bankroll: £50,000
+Unit Size: £500 (1% of bankroll)
+Stake per bet: 0.04 units = £20 typical
+Range: 0.02-0.06 units = £10-30 per bet
+
+Daily:
+  Bets: 3-4
+  Stake: £60-80 (3-4 × £20)
+
+Monthly (~80 bets):
+  Total Stake: £1,600
+  Expected P&L: £50 (at +3.1% ROI)
+  Variance: -£150 to +£250
+```
+
+**Script usage**:
+```bash
+# Standard conservative (0.015 units)
+./get_tomorrows_bets_v2.sh 2025-10-18 50000
+
+# Output shows: ~£7.50 per bet (too small for your goal)
+```
+
+**To get £10-30 stakes**, modify the script:
+```bash
+# Edit get_tomorrows_bets_v2.sh line 117:
+# Change: 0.015 as stake_units
+# To:     0.04 as stake_units    (for £20 average)
+
+# Or create variable staking:
+# 0.02-0.06 units based on edge/confidence
+```
+
+**Monthly Performance**:
+- Good month: +£200 (+12% ROI)
+- Average month: +£50 (+3% ROI)
+- Bad month: -£100 (-6% ROI)
+
+---
+
+### **Profile 2: High Staking** 💰
+
+**Target**: £5,000/month stakes, £100-300 per bet
+
+```
+Bankroll: £500,000
+Unit Size: £5,000 (1% of bankroll)
+Stake per bet: 0.04 units = £200 typical
+Range: 0.02-0.06 units = £100-300 per bet
+
+Daily:
+  Bets: 3-4
+  Stake: £600-800 (3-4 × £200)
+
+Monthly (~80 bets):
+  Total Stake: £16,000
+  Expected P&L: £500 (at +3.1% ROI)
+  Variance: -£1,500 to +£2,500
+```
+
+**Script usage**:
+```bash
+# With £500k bankroll
+./get_tomorrows_bets_v2.sh 2025-10-18 500000
+
+# With modified stake_units (0.04), shows: ~£200 per bet ✓
+```
+
+**Monthly Performance**:
+- Good month: +£2,000 (+12% ROI)
+- Average month: +£500 (+3% ROI)
+- Bad month: -£1,000 (-6% ROI)
+
+**⚠️ IMPORTANT**: Only scale to this after 12+ months profitable track record!
+
+---
+
+### **Comparison: Staking Levels**
+
+| Profile | Bankroll | Unit | Stake/Bet | Daily | Monthly Stake | Monthly P&L (3%) | Risk Level |
+|---------|----------|------|-----------|-------|---------------|------------------|------------|
+| **Conservative** | £5,000 | £50 | £0.75 | £2-3 | £60 | +£2 | ⭐ Low |
+| **Moderate** | £10,000 | £100 | £4 | £12-16 | £320 | +£10 | ⭐⭐ Medium |
+| **Medium** | £50,000 | £500 | £20 | £60-80 | £1,600 | +£50 | ⭐⭐⭐ High |
+| **High** | £500,000 | £5,000 | £200 | £600-800 | £16,000 | +£500 | ⭐⭐⭐⭐ Very High |
+
+---
+
+### **How to Modify Script for Higher Stakes**
+
+**Option 1: Edit stake_units in script** (permanent)
+
+```bash
+# Edit: profitable_models/hybrid_v3/get_tomorrows_bets_v2.sh
+
+# Find line ~117:
+    0.015 as stake_units,
+
+# Change to:
+    0.04 as stake_units,    # For 4% of unit per bet
+    
+# Save and run
+./get_tomorrows_bets_v2.sh 2025-10-18 50000
+# Now shows £20 per bet instead of £7.50
+```
+
+---
+
+**Option 2: Variable staking by edge** (advanced)
+
+```sql
+-- Replace fixed 0.015 with dynamic calculation:
+CASE 
+    WHEN edge_pp >= 0.12 THEN 0.06  -- High edge → 6% of unit
+    WHEN edge_pp >= 0.10 THEN 0.04  -- Medium edge → 4% of unit
+    ELSE 0.02                        -- Low edge → 2% of unit
+END as stake_units,
+```
+
+**Benefit**: Larger stakes on stronger bets, smaller on marginal ones.
+
+---
+
+### **⚠️ Higher Staking Warnings**
+
+**Before scaling up**:
+- ✅ **Complete 6-12 months** paper trading/small stakes
+- ✅ **Validate +3% ROI** on your actual bets
+- ✅ **Understand variance** (drawdowns of 10-20% are normal)
+- ✅ **Have 100+ unit bankroll** (never less!)
+- ✅ **Accept risk** (larger stakes = larger drawdowns)
+
+**Don't scale up if**:
+- ❌ Still in paper trading phase
+- ❌ Haven't validated ROI yourself
+- ❌ Can't handle 10-20% drawdowns
+- ❌ Bankroll < 100 units
+- ❌ Emotional about losses
+
+---
+
+### **Scaling Pathway**
+
+```
+Phase 1: Conservative (Months 1-2)
+  Bankroll: £1,000-5,000
+  Stake/bet: £0.50-2.00
+  Goal: Learn system, validate ROI
+  
+Phase 2: Moderate (Months 3-6)
+  Bankroll: £5,000-10,000
+  Stake/bet: £2-5
+  Goal: Build confidence, refine process
+  
+Phase 3: Medium (Months 7-12)
+  Bankroll: £20,000-50,000
+  Stake/bet: £10-30
+  Goal: Scale profits, monitor closely
+  
+Phase 4: High (Year 2+)
+  Bankroll: £100,000-500,000
+  Stake/bet: £50-300
+  Goal: Serious income, professional approach
+```
+
+**Never skip phases!** Each phase validates the system at scale.
+
+---
+
+### **Monthly Stake Targets**
+
+| Target Monthly Stake | Required Bankroll | Unit Size | Stake/Bet (0.04u) | Daily Stake |
+|---------------------|------------------|-----------|-------------------|-------------|
+| £100 | £10,000 | £100 | £4 | £12 |
+| £250 | £25,000 | £250 | £10 | £30 |
+| **£500** | **£50,000** | **£500** | **£20** | **£60** |
+| £1,000 | £100,000 | £1,000 | £40 | £120 |
+| £2,500 | £250,000 | £2,500 | £100 | £300 |
+| **£5,000** | **£500,000** | **£5,000** | **£200** | **£600** |
+
+**Formula**: Monthly stake ≈ Daily stake × 25 betting days
+
+---
+
+### **Risk Management at Scale**
+
+**Per-bet caps** (even at high stakes):
+```
+Max single bet: 0.10 units
+  £50k bankroll: £50 max
+  £500k bankroll: £500 max
+
+Max per race: 1 selection
+Max per day: 15 units total
+  £50k: £750/day max
+  £500k: £7,500/day max
+
+Stop-loss: -5 units/day
+  £50k: -£250/day → stop
+  £500k: -£2,500/day → stop
+```
+
+**These limits protect from catastrophic days.**
+
+---
+
+### **Expected Returns at Scale**
+
+**Medium Staking** (£50k bankroll, £500/month stakes):
+```
+Year 1:
+  Turnover: ~£19,200
+  Expected: +£595 (+3.1% ROI)
+  Range: -£500 to +£1,500 (variance)
+  
+Good case: +£1,500 (+8% ROI)
+Average case: +£600 (+3% ROI)
+Bad case: -£400 (-2% ROI, still learning)
+```
+
+---
+
+**High Staking** (£500k bankroll, £5,000/month stakes):
+```
+Year 1:
+  Turnover: ~£192,000
+  Expected: +£5,952 (+3.1% ROI)
+  Range: -£5,000 to +£15,000 (variance)
+  
+Good case: +£15,000 (+8% ROI)
+Average case: +£6,000 (+3% ROI)
+Bad case: -£4,000 (-2% ROI, still learning)
+```
+
+**Note**: Variance is real. Even profitable strategies have losing months/years.
+
+---
+
 ## 🔄 Retraining
 
 ### **Schedule: Annual (Every January 1)**
