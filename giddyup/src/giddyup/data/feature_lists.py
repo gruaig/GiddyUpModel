@@ -5,35 +5,31 @@ CRITICAL: Training uses ABILITY_FEATURES only (no market data).
 Market features are joined at SCORING time only.
 """
 
-# ===== ABILITY FEATURES (for training) =====
-# These predict horse ability independent of market pricing
+# ===== ABILITY FEATURES (Path A - Pure Ability, NO Market Proxies) =====
+# CRITICAL: NO official_rating, NO racing_post_rating, NO market features
+# This model must be INDEPENDENT of expert opinions and market
 ABILITY_FEATURES = [
-    # Horse ability / speed
-    "official_rating",
-    "racing_post_rating",
-    "best_rpr_last_3",
-    
-    # GiddyUp Performance Rating (GPR)
+    # GiddyUp Performance Rating (our own independent rating)
     "gpr",
-    "gpr_minus_or",
-    "gpr_minus_rpr",
     "gpr_sigma",
+    # NOTE: gpr_minus_or removed (no OR in training)
+    # NOTE: gpr_minus_rpr removed (no RPR in training)
     
-    # Recency & recent form
+    # Recent form (raw performance)
     "days_since_run",
     "last_pos",
     "avg_btn_last_3",
     
-    # Career history
+    # Career history (objective stats)
     "career_runs",
     "career_strike_rate",
     
-    # Trainer long-term stats
+    # Trainer long-term stats (objective)
     "trainer_sr_total",
     "trainer_wins_total",
     "trainer_runs_total",
     
-    # Jockey long-term stats
+    # Jockey long-term stats (objective)
     "jockey_sr_total",
     "jockey_wins_total",
     "jockey_runs_total",
@@ -73,20 +69,31 @@ def guard_no_market(cols: list[str]) -> None:
     """
     Ensure no market features leak into training.
     
+    Uses both explicit list matching AND regex pattern matching to catch:
+    - Official Rating (OR)
+    - Racing Post Rating (RPR)
+    - Odds, prices, rankings
+    - Volume, trading data
+    
     Raises:
         AssertionError: If any market features found in cols
         
     Example:
-        >>> guard_no_market(["official_rating", "trainer_sr_total"])  # OK
+        >>> guard_no_market(["gpr", "trainer_sr_total"])  # OK
         >>> guard_no_market(["official_rating", "decimal_odds"])  # FAILS!
     """
+    from giddyup.data.guards import assert_no_market_features
+    
+    # Use regex pattern matching (catches OR, RPR, odds, etc.)
+    assert_no_market_features(df_cols=cols, feature_cols=cols)
+    
+    # Also check explicit MARKET_FEATURES list
     bad = set(cols) & set(MARKET_FEATURES)
     if bad:
         raise AssertionError(
             f"🚨 LEAKAGE GUARD: Training features include market columns: {sorted(bad)}\n"
             f"   Market features should ONLY be used at scoring time, not training!"
         )
-    print(f"✅ Leakage guard passed: No market features in training set")
 
 
 # For clarity, export what should be used when

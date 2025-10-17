@@ -176,42 +176,98 @@ def build_training_data(
     ])
     
     # ===== 6. GPR (GiddyUp Performance Rating) =====
-    print("   [6/7] Computing GPR for each horse (no look-ahead)...")
+    print("   [6/7] Computing GPR for each horse (POINT-IN-TIME, no look-ahead)...")
     
     from giddyup.ratings.gpr import compute_gpr, add_gpr_to_dataset
     
-    # To prevent look-ahead bias, compute GPR per horse using only PAST runs
-    # Strategy: For efficiency, compute GPR as-of the END of training window
-    # This is safe because we're using all past data, not future
+    # CRITICAL: Compute GPR per-race using only PAST runs
+    # For each race, GPR must use only runs BEFORE that race date
     
-    # Get unique race dates and compute GPR snapshot for each
-    # For large datasets, compute once at the end of period
-    max_date = df.select(pl.col("race_date").max()).item()
-    print(f"      Computing GPR as-of {max_date}...")
+    print("      This will take several minutes...")
     
-    # Build historical runs dataset (all runs in our training window)
+    # Create a column to store GPR computed as-of race date
+    df = df.with_columns([
+        pl.lit(None).cast(pl.Float64).alias("gpr"),
+        pl.lit(None).cast(pl.Float64).alias("gpr_sigma"),
+        pl.lit(None).cast(pl.Int64).alias("n_runs"),
+        pl.lit(None).cast(pl.Float64).alias("gpr_minus_or"),
+        pl.lit(None).cast(pl.Float64).alias("gpr_minus_rpr"),
+    ])
+    
+    # Build historical runs dataset
     hist_runs = df.select([
         "horse_id", "race_id", "race_date", "dist_f", "beaten_lengths",
         "lbs", "course_id", "going", "class", "pos_num"
-    ]).unique()
+    ]).unique().sort("race_date")
     
-    # Rename for GPR (which expects 'btn')
+    # Rename for GPR
     hist_runs = hist_runs.rename({"beaten_lengths": "btn"})
     
-    # Compute GPR using all historical data
-    # The compute_gpr function already filters by as_of_date internally
-    gpr_df = compute_gpr(
-        df_runs=hist_runs,
-        as_of_date=None,  # Use all available data (already filtered by date_from/date_to)
-        half_life_days=120.0,
-        shrinkage_k=4.0,
-        prior_rating=75.0,
+    # Strategy: Compute GPR incrementally by year to avoid look-ahead
+    # For each year, use only runs from PREVIOUS years
+    
+    years = sorted(df.select(pl.col("race_date").dt.year()).unique().to_series().to_list())
+    print(f"      Processing {len(years)} years: {years[0]}-{years[-1]}")
+    
+    all_gpr_snapshots = []
+    
+    for year in years:
+        # Use runs from ALL previous years + this year's races up to each date
+        # For simplicity: use runs up to END of previous year for this year's GPR
+        cutoff_date = f"{year-1}-12-31" if year > years[0] else f"{year-1}-01-01"
+        
+        # Compute GPR using only past runs
+        past_runs = hist_runs.filter(pl.col("race_date") <= pl.lit(cutoff_date).str.strptime(pl.Date, "%Y-%m-%d"))
+        
+        if len(past_runs) > 0:
+            gpr_snapshot = compute_gpr(
+                df_runs=past_runs,
+                as_of_date=None,  # Already filtered above
+                half_life_days=120.0,
+                shrinkage_k=4.0,
+                prior_rating=75.0,
+            )
+            
+            # Tag with year
+            gpr_snapshot = gpr_snapshot.with_columns([
+                pl.lit(year).alias("year")
+            ])
+            
+            all_gpr_snapshots.append(gpr_snapshot)
+            
+            print(f"        {year}: GPR from {len(past_runs):,} past runs for {gpr_snapshot.height:,} horses")
+    
+    # Combine all snapshots
+    gpr_by_year = pl.concat(all_gpr_snapshots)
+    
+    # Join to main dataset by horse_id and year
+    df = df.with_columns([
+        pl.col("race_date").dt.year().alias("year")
+    ])
+    
+    df = df.join(
+        gpr_by_year,
+        on=["horse_id", "year"],
+        how="left"
     )
     
-    # Add to dataset with deltas
-    df = add_gpr_to_dataset(df, gpr_df)
+    # For horses with no GPR (debutants), fill with prior
+    df = df.with_columns([
+        pl.col("gpr").fill_null(75.0),
+        pl.col("gpr_sigma").fill_null(15.0),
+        pl.col("n_runs").fill_null(0),
+    ])
     
-    print(f"      ✅ Added GPR features: gpr, gpr_minus_or, gpr_minus_rpr, gpr_sigma")
+    # Calculate deltas
+    df = df.with_columns([
+        (pl.col("gpr") - pl.col("official_rating").fill_null(75.0)).alias("gpr_minus_or"),
+        (pl.col("gpr") - pl.col("racing_post_rating").fill_null(75.0)).alias("gpr_minus_rpr"),
+    ])
+    
+    # Drop temp year column
+    df = df.drop("year")
+    
+    print(f"      ✅ Added GPR features (point-in-time): gpr, gpr_minus_or, gpr_minus_rpr, gpr_sigma")
     
     # ===== 7. Race-Level Features =====
     print("   [7/7] Adding race-level features...")

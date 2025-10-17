@@ -36,8 +36,7 @@ MAX_STAKE = float(os.getenv("MAX_STAKE", "0.5"))
 def load_test_data_with_predictions(
     date_from: str = "2024-01-01",
     date_to: str = "2025-10-16",
-    model_name: str = "hrd_win_prob",
-    model_stage: str = "Production"
+    run_id: str = "c582230dc31f47fe8846ad31a2553f99"
 ) -> pl.DataFrame:
     """
     Load test data and add model predictions.
@@ -45,8 +44,7 @@ def load_test_data_with_predictions(
     Args:
         date_from: Start date
         date_to: End date
-        model_name: MLflow model name
-        model_stage: MLflow stage
+        run_id: MLflow run ID (from training)
         
     Returns:
         DataFrame with predictions and outcomes
@@ -63,8 +61,9 @@ def load_test_data_with_predictions(
     print(f"   Loaded {len(df):,} runners from {df['race_id'].n_unique():,} races")
     
     # Load model
-    print(f"\n🤖 Loading model: {model_name} ({model_stage})")
-    model_uri = f"models:/{model_name}/{model_stage}"
+    print(f"\n🤖 Loading model from run: {run_id}")
+    mlflow.set_tracking_uri('file:///home/smonaghan/GiddyUpModel/giddyup/mlruns')
+    model_uri = f"runs:/{run_id}/ensemble"
     model = mlflow.pyfunc.load_model(model_uri)
     
     # Prepare features
@@ -355,8 +354,7 @@ def main():
     df = load_test_data_with_predictions(
         date_from="2024-01-01",
         date_to="2025-10-16",
-        model_name="hrd_win_prob",
-        model_stage="Production"
+        run_id="c582230dc31f47fe8846ad31a2553f99"  # Latest training run
     )
     
     # Compute value metrics

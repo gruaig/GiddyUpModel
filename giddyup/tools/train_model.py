@@ -16,8 +16,12 @@ from giddyup.models.trainer import train_model, TrainConfig
 
 
 def main():
-    """Run full training pipeline."""
-    print("🏇 GiddyUp Model Training Pipeline - ABILITY-ONLY")
+    """Run full training pipeline - Path A (Pure Ability, No Market Proxies)."""
+    print("🏇 GiddyUp Model Training Pipeline - PATH A: PURE ABILITY")
+    print("=" * 80)
+    print("\n⚠️  PATH A: NO Official Rating, NO Racing Post Rating, NO Market Features")
+    print("   Training ONLY on raw ability + GPR")
+    print("   Expected AUC: 0.60-0.75 (independent of market)")
     print("=" * 80)
     
     # ===== Configuration =====
