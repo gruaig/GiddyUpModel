@@ -28,16 +28,34 @@
 
 **Result**: Systematic +3.1% ROI edge over market
 
-> **🆕 NEW: Path B Strategy Available!**  
-> High-ROI alternative: **+65% ROI @ 359 bets/year** (needs validation)  
-> See branch `plan_b` or read `STRATEGY_COMPARISON.md`  
-> Can run BOTH strategies for **~37% combined ROI**!
+---
+
+## 🎯 **TWO STRATEGIES AVAILABLE!**
+
+All strategies are now in the **`strategies/`** folder:
+
+### **Strategy A: Hybrid V3** (Proven, Stable) ✅
+- **Location**: `strategies/strategy_a_hybrid_v3/`
+- **ROI**: +3.1% (proven on 1,794 bets)
+- **Volume**: 980 bets/year (~3-4/day)
+- **Status**: Ready for deployment NOW
+
+### **Strategy B: Path B** (High ROI, Selective) 💎
+- **Location**: `strategies/strategy_b_high_roi/`
+- **ROI**: +65.1% (backtested on 634 bets)
+- **Volume**: 359 bets/year (~1/day)
+- **Status**: Needs 2-month validation
+
+### **BOTH Together** ⭐ **RECOMMENDED**
+- **Combined ROI**: ~37% blended
+- **Volume**: 1,339 bets/year (~4-5/day)
+- **Profit**: +£486/year (£5k bankroll) - **26x more than A alone!**
+
+**See**: `strategies/README.md` for complete comparison
 
 ---
 
-## 📊 Performance Summary
-
-### **Hybrid V3 Model** (Production)
+## 📊 Strategy A: Hybrid V3 (Production)
 
 ```
 Backtest Period:  Jan 2024 - Oct 2025 (22 months)
@@ -72,32 +90,50 @@ Risk:
 
 ## 🚀 Quick Start
 
-### **1. Get Tomorrow's Bets** (Daily)
+### **1. Choose Your Strategy**
+
+**All strategies in**: `strategies/` folder
+
+### **Strategy A** (Proven, 3-4 bets/day): ✅ **START HERE**
 
 ```bash
-cd profitable_models/hybrid_v3
+cd strategies/strategy_a_hybrid_v3
 
-# Enhanced version (with bankroll input)
-./get_tomorrows_bets_v2.sh 2025-10-18 5000
-                          ↑           ↑
-                          date    bankroll (£)
+# With detailed reasoning
+./get_tomorrows_bets_with_reasoning.sh 2025-10-18 5000
+                                      ↑           ↑
+                                      date    bankroll (£)
 ```
 
-**What you get**:
-- ✅ Bet selections with **real £ stakes** (based on YOUR bankroll)
-- ✅ Auto-generated **CSV file** (import to spreadsheet)
-- ✅ Auto-generated **SQL file** (log to database)
+**Output**: 3-4 bets with complete explanations
 
-**Output**:
-```
-🎯 BET #1 | 14:30 | Ascot | Thunder Road | 9.50 odds | Stake: £0.75
-🎯 BET #2 | 15:45 | Newmarket | Silver Storm | 10.00 odds | Stake: £0.60
-🎯 BET #3 | 17:00 | Leopardstown | Celtic Dawn | 11.00 odds | Stake: £0.50
+---
 
-Total: 3 bets | £1.85 stake | CSV: logs/bets/bets_2025-10-18.csv
+### **Strategy B** (High ROI, 0-2 bets/day): 💎 **AFTER VALIDATION**
+
+```bash
+cd strategies/strategy_b_high_roi
+./get_bets.sh 2025-10-18 5000
 ```
 
-**See**: `profitable_models/hybrid_v3/ENHANCED_SCRIPT_GUIDE.md`
+**Output**: 0-2 bets (very selective, higher edge)
+
+---
+
+### **BOTH** (Recommended): ⭐
+
+```bash
+# Run both scripts (10 min total)
+cd strategies/strategy_a_hybrid_v3
+./get_tomorrows_bets_with_reasoning.sh 2025-10-18 5000
+
+cd ../strategy_b_high_roi
+./get_bets.sh 2025-10-18 5000
+
+# Total: 3-6 bets, track separately
+```
+
+**See**: `strategies/README.md` for complete guide
 
 ---
 
@@ -201,52 +237,53 @@ Mid-field (Rank 3-6):
 ```
 giddyup/
 │
-├── 📂 profitable_models/          ⭐ START HERE
-│   └── hybrid_v3/                 Production model (+3.1% ROI)
-│       ├── README.md              Performance details
-│       ├── config.py              All settings
-│       ├── get_tomorrows_bets.sh  🎯 RUN THIS DAILY
-│       └── score_tomorrow_hybrid.py
+├── 📂 strategies/                  ⭐⭐ START HERE - BOTH STRATEGIES
+│   ├── README.md                   Strategy comparison & guide
+│   │
+│   ├── strategy_a_hybrid_v3/       ✅ Strategy A (Proven)
+│   │   ├── get_tomorrows_bets_with_reasoning.sh  🎯 RUN THIS
+│   │   ├── get_tomorrows_bets_v2.sh
+│   │   ├── config.py
+│   │   └── STRATEGY_A_README.md
+│   │
+│   └── strategy_b_high_roi/        💎 Strategy B (High ROI)
+│       ├── get_bets.sh              🎯 RUN THIS (after validation)
+│       ├── path_b_hybrid.yaml       Configuration
+│       ├── backtest_path_b_simple.py
+│       └── STRATEGY_B_README.md
 │
-├── 📂 docs/                       Complete documentation
+├── 📂 docs/                       Complete documentation (31+ files)
 │   ├── START_HERE_OCT17.md        Quick start guide
-│   ├── YOUR_COMPLETE_ANSWER.md    All questions answered
-│   ├── FOR_DEVELOPER.md           Database requirements
-│   ├── EXAMPLE_OUTPUT.md          What script shows you
+│   ├── STRATEGY_COMPARISON.md     A vs B comparison
+│   ├── BOTH_STRATEGIES_READY.md   Dual deployment
+│   ├── BETTING_TIMING_AND_ODDS_STRATEGY.md  When/where to bet
+│   ├── RACE_BY_RACE_WORKFLOW.md   All-day racing
+│   ├── UNDERSTANDING_YOUR_BETS.md Why each bet
 │   ├── METHOD.md                  Full methodology (1,395 lines)
-│   ├── DEPLOYMENT_GUIDE_HYBRID.md Deployment plan
-│   └── ...21 more guides
-│
-├── 📂 models_ran/                 Historical backtests
-│   ├── backtest_hybrid.py         Hybrid V3 validation
-│   ├── backtest_pathA_v3.py       Pure ability version
-│   └── ...7 more iterations
+│   └── ...25 more guides
 │
 ├── 📂 src/giddyup/               Core modules
 │   ├── data/                      Feature engineering
-│   │   ├── build.py               Data pipeline
-│   │   ├── feature_lists.py       23 ability features
-│   │   ├── guards.py              Leakage prevention
-│   │   └── market.py              Market features
 │   ├── models/                    Training & scoring
-│   │   ├── trainer.py             LightGBM + calibration
-│   │   └── hybrid.py              6-gate system
+│   ├── scoring/                   Path B logic
 │   ├── ratings/                   GPR rating system
 │   ├── price/                     EV, Kelly, fair odds
-│   ├── risk/                      Risk controls
-│   └── publish/                   Signal publishing
+│   └── risk/                      Risk controls
 │
 ├── 📂 tools/                      Utilities
 │   ├── train_model.py             Model training
 │   ├── migrate.py                 Database setup
-│   └── ...
+│   └── backtest_*.py              Various backtests
 │
+├── 📂 config/                     Configurations
+│   └── path_b_hybrid.yaml         Path B settings
+│
+├── 📂 models_ran/                 Historical backtests
 ├── 📂 migrations/                 Database schema
-│   └── 001_modeling_schema.sql    modeling.* tables
 │
-├── get_tomorrows_bets.sh          Quick access to selector
-├── pyproject.toml                 Python dependencies
-└── README.md                      This file
+├── README.md                      This file
+├── COMPLETE_SUMMARY.md           Day's achievements
+└── pyproject.toml                 Python dependencies
 ```
 
 ---
@@ -1109,11 +1146,19 @@ Ready for:           Production deployment
 
 ## 🎯 Quick Links
 
-- **Daily Script**: `profitable_models/hybrid_v3/get_tomorrows_bets.sh`
+**Strategies**:
+- **Strategy A** (Proven): `strategies/strategy_a_hybrid_v3/get_tomorrows_bets_with_reasoning.sh`
+- **Strategy B** (High ROI): `strategies/strategy_b_high_roi/get_bets.sh`
+- **Comparison**: `strategies/README.md`
+
+**Documentation**:
 - **Start Guide**: `docs/START_HERE_OCT17.md`
+- **Strategy Comparison**: `STRATEGY_COMPARISON.md`
+- **Both Strategies Guide**: `BOTH_STRATEGIES_READY.md`
 - **Developer Guide**: `docs/FOR_DEVELOPER.md`
 - **Full Methodology**: `docs/METHOD.md`
-- **GitHub**: https://github.com/gruaig/GiddyUpModel
+
+**GitHub**: https://github.com/gruaig/GiddyUpModel
 
 ---
 
