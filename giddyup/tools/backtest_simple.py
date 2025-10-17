@@ -145,34 +145,37 @@ if len(filtered) > 0:
     print(f"   Total P&L: {total_pnl:+.2f} units")
     print(f"   ROI: {roi:.3f} ({roi*100:+.1f}%)")
     
-    # By GPR delta
-    print(f"\n📊 Performance by GPR - OR Delta:")
-    gpr_buckets = filtered.with_columns([
-        pl.when(pl.col("gpr_minus_or") < -5).then("< -5 (worse)")
-        .when(pl.col("gpr_minus_or") < 0).then("-5 to 0")
-        .when(pl.col("gpr_minus_or") < 5).then("0 to +5")
-        .otherwise("+5+ (better)")
-        .alias("gpr_bucket")
-    ])
-    
-    gpr_analysis = gpr_buckets.group_by("gpr_bucket").agg([
-        pl.len().alias("n_bets"),
-        pl.col("decimal_odds").mean().alias("avg_odds"),
-        pl.col("edge_prob").mean().alias("avg_edge"),
-        pl.col("roi_bet").mean().alias("roi"),
-        pl.col("won").mean().alias("win_rate"),
-    ]).sort("gpr_bucket")
-    
-    print(gpr_analysis)
+    # By GPR delta (if available)
+    if "gpr_minus_or" in filtered.columns:
+        print(f"\n📊 Performance by GPR - OR Delta:")
+        gpr_buckets = filtered.with_columns([
+            pl.when(pl.col("gpr_minus_or") < -5).then(pl.lit("< -5 (worse)"))
+            .when(pl.col("gpr_minus_or") < 0).then(pl.lit("-5 to 0"))
+            .when(pl.col("gpr_minus_or") < 5).then(pl.lit("0 to +5"))
+            .otherwise(pl.lit("+5+ (better)"))
+            .alias("gpr_or_bucket")
+        ])
+        
+        gpr_analysis = gpr_buckets.group_by("gpr_or_bucket").agg([
+            pl.len().alias("n_bets"),
+            pl.col("decimal_odds").mean().alias("avg_odds"),
+            pl.col("edge_prob").mean().alias("avg_edge"),
+            pl.col("roi_bet").mean().alias("roi"),
+            pl.col("won").mean().alias("win_rate"),
+        ]).sort("gpr_or_bucket")
+        
+        print(gpr_analysis)
+    else:
+        print(f"\n⚠️  gpr_minus_or not available (Path A uses pure ability only)")
     
     # By odds band
     print(f"\n📊 Performance by Odds Band:")
     odds_buckets = filtered.with_columns([
-        pl.when(pl.col("decimal_odds") < 3.0).then("2.0-3.0")
-        .when(pl.col("decimal_odds") < 5.0).then("3.0-5.0")
-        .when(pl.col("decimal_odds") < 8.0).then("5.0-8.0")
-        .when(pl.col("decimal_odds") < 15.0).then("8.0-15.0")
-        .otherwise("15.0+")
+        pl.when(pl.col("decimal_odds") < 3.0).then(pl.lit("2.0-3.0"))
+        .when(pl.col("decimal_odds") < 5.0).then(pl.lit("3.0-5.0"))
+        .when(pl.col("decimal_odds") < 8.0).then(pl.lit("5.0-8.0"))
+        .when(pl.col("decimal_odds") < 15.0).then(pl.lit("8.0-15.0"))
+        .otherwise(pl.lit("15.0+"))
         .alias("odds_band")
     ])
     
