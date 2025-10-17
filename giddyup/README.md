@@ -2,13 +2,16 @@
 
 **An independent, profitable horse racing betting model built with Python**
 
+**Developed and Written by: Sean MoonBoots**
+
 [![License](https://img.shields.io/badge/license-Private-red.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/status-production--ready-green.svg)](profitable_models/hybrid_v3/)
 
 **Performance**: +3.1% ROI validated on 1,794 bets (2024-2025)  
 **Volume**: ~980 bets/year (~80/month, ~3-4/day)  
-**Model**: Hybrid V3 (ability-only training + market-aware scoring)
+**Model**: Hybrid V3 (ability-only training + market-aware scoring)  
+**Author**: Sean MoonBoots | **Built**: October 17, 2025
 
 ---
 
@@ -1109,8 +1112,20 @@ Ready for:           Production deployment
 
 ---
 
-**Built**: October 17, 2025  
+## 👤 Author & Credits
+
+**Developed and Written by**: **Sean MoonBoots**
+
+**Project Timeline**: October 17, 2025  
 **Status**: ✅ Production-ready  
+**Performance**: +3.1% ROI validated on 1,794 bets
+
+**Contact**: [GitHub](https://github.com/gruaig/GiddyUpModel)
+
+---
+
+**Built**: October 17, 2025  
+**Author**: Sean MoonBoots  
 **Next**: Test tomorrow morning (Oct 18, 8 AM)
 
 🏇 **Let's find some value!** 🎯
