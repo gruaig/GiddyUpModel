@@ -28,6 +28,11 @@
 
 **Result**: Systematic +3.1% ROI edge over market
 
+> **🆕 NEW: Path B Strategy Available!**  
+> High-ROI alternative: **+65% ROI @ 359 bets/year** (needs validation)  
+> See branch `plan_b` or read `STRATEGY_COMPARISON.md`  
+> Can run BOTH strategies for **~37% combined ROI**!
+
 ---
 
 ## 📊 Performance Summary
