@@ -34,35 +34,23 @@ def main():
     print(f"   Target volume: {config['targets']['min_bets_per_year']}-{config['targets']['max_bets_per_year']} bets/year")
     print(f"   Target ROI: {config['targets']['min_roi']*100}%+")
     
-    # Load model from MLflow
-    print(f"\n📦 Loading model: {config['model']['name']}")
-    try:
-        model_uri = f"models:/{config['model']['name']}/{config['model']['stage']}"
-        model = mlflow.sklearn.load_model(model_uri)
-        print("   ✅ Model loaded from MLflow")
-    except Exception as e:
-        print(f"   ⚠️  Could not load from MLflow: {e}")
-        print("   Using fallback: Retraining model inline...")
-        
-        # Fallback: train model inline
-        from giddyup.models.trainer import train_model, TrainConfig
-        from giddyup.data.feature_lists import ABILITY_FEATURES
-        
-        train_cfg = TrainConfig(
-            train_date_from="2006-01-01",
-            train_date_to="2023-12-31",
-            features=ABILITY_FEATURES,
-            n_folds=5
-        )
-        
-        df_train = build_training_data(
-            date_from=train_cfg.train_date_from,
-            date_to=train_cfg.train_date_to,
-            include_market=False
-        )
-        
-        model, _ = train_model(df_train, train_cfg, log_mlflow=False)
-        print("   ✅ Model trained inline")
+    # Load most recent model
+    print(f"\n📦 Loading trained model...")
+    import pickle
+    import glob
+    
+    # Find most recent model file
+    model_files = glob.glob("mlruns/*/models/*/artifacts/model.pkl")
+    if model_files:
+        latest_model = max(model_files, key=lambda x: Path(x).stat().st_mtime)
+        print(f"   Loading: {latest_model}")
+        with open(latest_model, 'rb') as f:
+            model = pickle.load(f)
+        print("   ✅ Model loaded successfully")
+    else:
+        print("   ❌ No trained model found!")
+        print("   Please train a model first using: uv run python tools/train_model.py")
+        return
     
     # Build test dataset (2024-2025 with market features)
     print("\n📊 Building test dataset (2024-2025)...")
@@ -70,8 +58,7 @@ def main():
     
     df_test = build_training_data(
         date_from=config['backtest']['test_from'],
-        date_to=config['backtest']['test_to'],
-        include_market=True  # Need market for Path B scoring
+        date_to=config['backtest']['test_to']
     )
     
     print(f"   ✅ {len(df_test):,} runners loaded")
@@ -81,7 +68,19 @@ def main():
     print("\n🎯 Generating predictions...")
     from giddyup.data.feature_lists import ABILITY_FEATURES
     
-    X_test = df_test.select(ABILITY_FEATURES).to_numpy()
+    # Select features and fill NaN values
+    X_test_df = df_test.select(ABILITY_FEATURES)
+    
+    # Fill NaN with column means
+    print("   Handling missing values...")
+    for col in ABILITY_FEATURES:
+        if X_test_df[col].is_null().any():
+            col_mean = X_test_df[col].mean()
+            X_test_df = X_test_df.with_columns(
+                pl.col(col).fill_null(col_mean if col_mean is not None else 0.0)
+            )
+    
+    X_test = X_test_df.to_numpy()
     
     # Handle model type (ensemble or single)
     if hasattr(model, 'predict_proba'):

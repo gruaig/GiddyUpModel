@@ -13,8 +13,8 @@ market:
   commission: 0.02  # 2% Betfair commission
   
 odds_caps:
-  min: 2.0  # Avoid very short favorites
-  max: 30.0  # Hard cap on longshots
+  min: 7.0  # Slightly wider range (was 8.0)
+  max: 16.0  # Slightly wider (was 15.0)
 
 liquidity:
   min_gbp: 250  # Minimum £250 available at best back
@@ -23,20 +23,20 @@ liquidity:
 # p_blend = (1 - λ) * p_model + λ * q_vigfree
 # Higher λ = trust market more
 lambda_by_odds:
-  "1.5-3.0": 0.60    # Favorites: trust market heavily
-  "3.0-5.0": 0.45    # Short prices: moderate trust
-  "5.0-8.0": 0.30    # Mid prices: some trust
-  "8.0-12.0": 0.15   # Proven sweet spot: trust model more
-  "12.0-999": 0.35   # Longshots: hedge with market
+  "1.5-3.0": 0.70    # Favorites: trust market MORE (was 0.60)
+  "3.0-5.0": 0.60    # Short prices: trust market MORE (was 0.45)
+  "5.0-8.0": 0.40    # Mid prices: increased trust (was 0.30)
+  "8.0-12.0": 0.15   # Proven sweet spot: keep same
+  "12.0-999": 0.50   # Longshots: more hedging (was 0.35)
 
 # Banded edge minimums (percentage points)
-# edge_pp = p_blend - q_vigfree
+# DRAMATICALLY INCREASED to reduce volume
 edge_min_by_odds:
-  "1.5-3.0": 0.12    # 12pp - market most efficient
-  "3.0-5.0": 0.08    # 8pp - moderate
-  "5.0-8.0": 0.06    # 6pp - easier
-  "8.0-12.0": 0.04   # 4pp - sweet spot
-  "12.0-999": 0.08   # 8pp - guard longshots
+  "1.5-3.0": 0.20    # 20pp - much stricter
+  "3.0-5.0": 0.15    # 15pp - much stricter
+  "5.0-8.0": 0.15    # 15pp - slightly tighter (was 14pp)
+  "8.0-12.0": 0.15   # 15pp - slightly tighter (was 14pp)
+  "12.0-999": 0.16   # 16pp - moderate
 
 # Minimum EV requirements by band
 ev_min_by_odds:
