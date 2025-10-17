@@ -1,0 +1,20 @@
+QUICK REFERENCE - 2025-10-17
+═══════════════════════════════════════════════════════════════════════════════
+
+AT T-60 FOR EACH BET:
+1. Open Betfair
+2. Find the race
+3. Check horse's current odds
+4. Fill spreadsheet: 't60_actual_odds' column
+5. If odds >= min_odds_needed → BET ✅
+6. If odds < min_odds_needed → SKIP ❌
+
+EVENING:
+1. Check results
+2. Fill 'result' column (WON/LOST)
+3. Calculate P&L:
+   WON: stake × (odds - 1) × 0.98
+   LOST: -stake
+   SKIP: blank
+
+═══════════════════════════════════════════════════════════════════════════════
