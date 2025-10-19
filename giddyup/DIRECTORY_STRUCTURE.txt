@@ -1,0 +1,112 @@
+GiddyUp Project Structure
+========================
+
+Root Directory (giddyup/)
+├── README.md                              ← Start here!
+├── CLEANUP_SUMMARY.md                     ← Cleanup details
+├── DIRECTORY_STRUCTURE.txt                ← This file
+│
+├── Core Bot Files
+│   ├── HorseBot.py                        ← Full-featured bot
+│   ├── HorseBot_Simple.py                 ← Simplified bot (recommended)
+│   ├── telegram_bot.py                    ← Telegram integration
+│   ├── generate_betting_report.py         ← Excel reports
+│   ├── generate_betting_card.py           ← PNG cards
+│   └── generate_result_tweets.py          ← Result tweets
+│
+├── Configuration
+│   ├── HorseBot_config.template.py        ← Betfair template
+│   ├── telegram_config.template.py        ← Telegram template
+│   ├── giddyup-bot.service                ← Systemd service
+│   └── horsebot_requirements.txt          ← Dependencies
+│
+├── scripts/                               ← Main workflow scripts
+│   ├── morning_prep.sh                    ← Morning workflow
+│   ├── end_of_day.sh                      ← Evening workflow
+│   ├── get_tomorrows_bets.sh             ← Get picks
+│   ├── run_bot_today.sh                   ← Quick start
+│   └── helpers/                           ← Helper utilities
+│       ├── generate_tweet_files.sh
+│       ├── tweet_manager.sh
+│       ├── test_telegram.py
+│       └── ...
+│
+├── docs/                                  ← All documentation
+│   ├── README.md                          ← Documentation index
+│   │
+│   ├── Quick Start
+│   │   ├── COMPLETE_DAILY_WORKFLOW.md     ← Full guide
+│   │   ├── QUICK_START_SERVICE.md         ← Quick reference
+│   │   └── HORSEBOT_QUICKSTART.md         ← Bot quickstart
+│   │
+│   ├── Setup
+│   │   ├── SERVICE_SETUP_GUIDE.md         ← Service installation
+│   │   ├── TELEGRAM_QUICKSTART.md         ← Telegram setup
+│   │   └── TELEGRAM_SETUP_GUIDE.md        ← Detailed Telegram
+│   │
+│   ├── Features
+│   │   ├── HORSEBOT_README.md             ← Bot overview
+│   │   ├── HORSEBOT_SUMMARY.md            ← Feature summary
+│   │   ├── HORSEBOT_LOGGING_GUIDE.md      ← Logging
+│   │   └── WHATS_NEW.md                   ← Recent changes
+│   │
+│   ├── Media & Reporting
+│   │   ├── BETTING_MEDIA_GUIDE.md         ← PNG & tweets
+│   │   ├── EXCEL_REPORT_GUIDE.md          ← Excel reports
+│   │   ├── TWEET_WORKFLOW.md              ← Tweet generation
+│   │   └── TWEET_SUMMARY.md               ← Tweet features
+│   │
+│   ├── model_docs/                        ← Model documentation
+│   │   ├── METHOD.md                      ← Methodology
+│   │   ├── PATH_A_GUIDE.md                ← Strategy A docs
+│   │   ├── PATH_B_GUIDE.md                ← Strategy B docs
+│   │   └── ... (40+ model docs)
+│   │
+│   └── archive/                           ← Old/deprecated
+│       ├── COMPLETE_READY.txt
+│       ├── TWITTER_*.md
+│       └── ...
+│
+├── strategies/                            ← Betting strategies
+│   ├── RUN_BOTH_STRATEGIES.sh            ← Main strategy runner
+│   ├── strategy_a_hybrid_v3/             ← Strategy A
+│   ├── strategy_b_high_roi/              ← Strategy B
+│   └── logs/                             ← All outputs
+│       ├── daily_bets/                   ← Daily picks
+│       ├── automated_bets/               ← Bot execution logs
+│       └── tweets/                       ← Generated tweets
+│
+├── tools/                                ← Utility scripts
+│   ├── train_model.py
+│   ├── backtest_*.py
+│   └── ...
+│
+├── migrations/                           ← Database schemas
+├── config/                               ← Model configs
+└── src/giddyup/                         ← Model source code
+
+Key Locations
+============
+
+Daily Workflow:
+  Morning:  ./scripts/morning_prep.sh
+  Start:    sudo systemctl start giddyup-bot
+  Evening:  ./scripts/end_of_day.sh
+
+Documentation:
+  Main:     README.md
+  Docs:     docs/README.md
+  Quick:    docs/QUICK_START_SERVICE.md
+
+Configuration:
+  Betfair:  HorseBot_config.py (create from template)
+  Telegram: telegram_config.py (create from template)
+
+Logs & Output:
+  Bets:     strategies/logs/daily_bets/
+  Reports:  strategies/logs/automated_bets/
+  Tweets:   strategies/logs/tweets/
+
+Test:
+  Telegram: python3 telegram_bot.py
+  Bot:      python3 HorseBot_Simple.py start $(date +%Y-%m-%d) 5000

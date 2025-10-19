@@ -1,0 +1,31 @@
+[Unit]
+Description=GiddyUp Horse Racing Betting Bot
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=smonaghan
+WorkingDirectory=/home/smonaghan/GiddyUpModel/giddyup
+Environment="PYTHONUNBUFFERED=1"
+
+# Run bot in no-refresh mode (uses pre-generated CSV from morning)
+ExecStart=/usr/bin/python3 /home/smonaghan/GiddyUpModel/giddyup/HorseBot.py \
+    --date $(date +%%Y-%%m-%%d) \
+    --bankroll 5000 \
+    --no-refresh
+
+# Restart on failure
+Restart=on-failure
+RestartSec=60
+
+# Logging
+StandardOutput=append:/home/smonaghan/GiddyUpModel/giddyup/logs/bot_service.log
+StandardError=append:/home/smonaghan/GiddyUpModel/giddyup/logs/bot_service_error.log
+
+# Stop after 16 hours (racing day over)
+RuntimeMaxSec=57600
+
+[Install]
+WantedBy=multi-user.target
+

@@ -240,6 +240,17 @@ echo ""
 echo "📄 File: $CSV_FILE"
 echo "📊 Total bets today: $BET_COUNT"
 echo ""
+
+# Generate PNG betting card
+echo "🎨 Generating betting card image..."
+python3 ../generate_betting_card.py "$TARGET_DATE" 2>/dev/null
+if [ $? -eq 0 ]; then
+    echo ""
+else
+    echo "⚠️  Could not generate PNG (missing Pillow? pip3 install pillow)"
+    echo ""
+fi
+
 echo "🎯 WORKFLOW:"
 echo "   1. At T-60 for each race, check Betfair odds"
 echo "   2. If odds >= min_odds_needed → PLACE BET"

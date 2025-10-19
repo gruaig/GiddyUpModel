@@ -47,11 +47,25 @@ mlruns/
 .ipynb_checkpoints/
 *.ipynb
 
-# Data
+# Data files
 *.parquet
 *.csv
 *.pkl
 *.pickle
+*.h5
+*.hdf5
+
+# Model files
+*.pt
+*.pth
+*.onnx
+*.pb
+*.model
+*.joblib
+
+# MLflow artifacts
+mlruns/
+mlartifacts/
 
 # OS
 .DS_Store
@@ -59,4 +73,39 @@ Thumbs.db
 
 # Logs
 *.log
+*.pid
+logs/
+giddyup/strategies/logs/automated_bets/*.csv
+giddyup/strategies/logs/backlay_trades/*.csv
+giddyup/strategies/logs/tweets/*.tweet
+giddyup/strategies/logs/daily_bets/*.csv
+giddyup/strategies/logs/daily_bets/*.png
 
+# HorseBot credentials & config
+giddyup/HorseBot_config.py
+giddyup/telegram_config.py
+giddyup/twitch_config.py
+giddyup/betfair_certs/
+*.crt
+*.key
+*.pem
+
+# Reports
+*.xlsx
+*.pdf
+giddyup/strategies/morning.bets.pdf
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.*.swp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+backup_*.sql
