@@ -1,0 +1,5 @@
+# Derived / transient — rebuildable or regenerated, don't commit
+data/*.parquet
+*.log
+predictions_*.csv
+__pycache__/
