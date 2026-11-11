@@ -36,26 +36,33 @@ def main():
 
     c = bf.login()
 
-    # ---- current / open offers ----
-    open_rows = []
+    # ---- current orders: split unmatched vs matched-but-not-settled ----
+    open_rows = []       # genuinely open (still unmatched, can cancel/take)
+    matched_unsettled = []  # fully matched, race not settled yet
     try:
         cur = c.betting.list_current_orders()
         for o in (cur.orders or []):
             ps = getattr(o, "price_size", None)
             price = getattr(ps, "price", 0) or 0
             size = getattr(ps, "size", 0) or 0
-            open_rows.append({
+            remaining = getattr(o, "size_remaining", 0) or 0
+            row = {
                 "settled_at": str(getattr(o, "placed_date", "") or ""),
                 "market_id": str(getattr(o, "market_id", "") or ""),
                 "selection_id": str(getattr(o, "selection_id", "") or ""),
                 "side": getattr(o, "side", "") or "",
                 "price": price, "stake": size,
                 "matched": getattr(o, "size_matched", 0) or 0,
-                "remaining": getattr(o, "size_remaining", 0) or 0,
-                "profit": 0.0, "status": "OPEN",
-            })
+                "remaining": remaining,
+                "profit": 0.0,
+                "status": "OPEN" if remaining > 0 else "PLACED",
+            }
+            if remaining > 0:
+                open_rows.append(row)
+            else:
+                matched_unsettled.append(row)
     except Exception as e:
-        print(f"  (could not fetch open orders: {e})")
+        print(f"  (could not fetch current orders: {e})")
 
     # ---- settled bets ----
     print(f"Fetching settled bets {start:%Y-%m-%d} -> {end:%Y-%m-%d} ...")
@@ -80,7 +87,7 @@ def main():
             "profit": getattr(o, "profit", 0) or 0, "status": "SETTLED",
         })
 
-    all_rows = open_rows + settled_rows
+    all_rows = open_rows + matched_unsettled + settled_rows
     fields = ["settled_at", "market_id", "selection_id", "side", "price", "stake", "matched", "remaining", "profit", "status"]
     new = not BETS_CSV.exists()
     with BETS_CSV.open("a", newline="") as f:
@@ -92,10 +99,16 @@ def main():
 
     # ---- report ----
     if open_rows:
-        print(f"\n=== OPEN OFFERS ({len(open_rows)}) ===")
+        print(f"\n=== OPEN OFFERS — unmatched, still in the market ({len(open_rows)}) ===")
         print(f"{'side':5s} {'price':>7s} {'stake':>7s} {'matched':>7s} {'remaining':>9s}")
         for r in open_rows:
             print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f} {r['matched']:>7.2f} {r['remaining']:>9.2f}")
+
+    if matched_unsettled:
+        print(f"\n=== PLACED — matched, awaiting settlement ({len(matched_unsettled)}) ===")
+        print(f"{'side':5s} {'price':>7s} {'stake':>7s}")
+        for r in matched_unsettled:
+            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f}")
 
     if settled_rows:
         tot = sum(r["profit"] for r in settled_rows)

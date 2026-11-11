@@ -353,18 +353,19 @@ def main():
         print(f"  No drift model ({e}); drift filter skipped.")
 
     # ---- place model (predict top-2/3/4 probability) + each-way terms ----
+    # standard UK/IRE place terms (win-only for tiny fields: no each-way on 2-4 runners)
+    tod = tod.with_columns([
+        pl.when(pl.col("field_size") <= 4).then(1.0)
+        .when(pl.col("field_size") <= 7).then(2.0)
+        .when(pl.col("field_size") <= 15).then(3.0)
+        .otherwise(4.0).alias("n_places"),
+        pl.when(pl.col("field_size") <= 7).then(0.25)
+        .when(pl.col("field_size") <= 15).then(0.20)
+        .otherwise(0.25).alias("place_frac"),
+    ])
     try:
         place_model = lgb.Booster(model_file=str(ROOT / "place_model.txt"))
         tod = tod.with_columns(pl.Series("place_prob", place_model.predict(tod.select(features).to_numpy())))
-        tod = tod.with_columns([
-            pl.when(pl.col("field_size") <= 4).then(1.0)
-            .when(pl.col("field_size") <= 7).then(2.0)
-            .when(pl.col("field_size") <= 15).then(3.0)
-            .otherwise(4.0).alias("n_places"),
-            pl.when(pl.col("field_size") <= 7).then(0.25)
-            .when(pl.col("field_size") <= 15).then(0.20)
-            .otherwise(0.25).alias("place_frac"),
-        ])
         tod = tod.with_columns([
             (1.0 + (pl.col("bf_back") - 1.0) * pl.col("place_frac")).alias("place_odds"),
             (pl.col("place_prob") * (1.0 + (pl.col("bf_back") - 1.0) * pl.col("place_frac")) - 1.0).alias("place_edge"),
@@ -455,13 +456,15 @@ def main():
             drift = row["drift_score"]
             place_prob = row["place_prob"]
             ew_edge = row["ew_edge"]
+            n_pl = row["n_places"] if "n_places" in row else None
+            ew_offered = n_pl is not None and n_pl >= 2  # each-way only when 2+ places paid
             bb_s = f"{bb:.2f}" if bb else "-"
             ev_s = f"{ev*100:+.1f}%" if ev is not None else "-"
-            place_s = f"{place_prob*100:.0f}%" if place_prob is not None else "-"
+            place_s = f"{place_prob*100:.0f}%" if (place_prob is not None and ew_offered) else "-"
             drift_s = "↓" if drift < -0.05 else ("↑" if drift > 0.05 else "–")
             act = _action(fair, bb, bl, drift)
             star = "★" if row["name"] in top_names and act in ("TAKE PRICE", "LAY") else " "
-            if act == "TAKE PRICE" and ew_edge is not None and ew_edge > args.margin:
+            if act == "TAKE PRICE" and ew_offered and ew_edge is not None and ew_edge > args.margin:
                 bet = "EACH-WAY"
             else:
                 bet = {"TAKE PRICE": "BACK WIN", "LAY": "LAY", "DRIFTER": "AVOID", "LEAVE": "-", "NO BF": "-"}[act]
