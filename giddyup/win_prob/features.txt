@@ -15,6 +15,14 @@ jockey_runs_total
 runs_at_course
 wins_at_course
 course_strike_rate
+sire_win_rate
+sire_place_rate
+dam_win_rate
+dam_place_rate
+damsire_win_rate
+or_change
+class_step
+is_veteran
 field_size
 class_numeric
 is_group_listed

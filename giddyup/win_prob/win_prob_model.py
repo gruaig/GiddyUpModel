@@ -68,6 +68,10 @@ FEATURES = [
     "jockey_sr_total", "jockey_runs_total",
     # course (past only)
     "runs_at_course", "wins_at_course", "course_strike_rate",
+    # pedigree (past only) — sire/dam/damsire progeny rates (~40% covered 2014+)
+    "sire_win_rate", "sire_place_rate", "dam_win_rate", "dam_place_rate", "damsire_win_rate",
+    # OR / class movement + age flags
+    "or_change", "class_step", "is_veteran",
     # race context (pre-race)
     "field_size", "class_numeric", "is_group_listed", "going_grouped",
     "is_aw", "is_flat", "dist_f", "draw", "age", "lbs", "sex", "official_rating",
@@ -145,6 +149,36 @@ def compute_features(df: pl.DataFrame) -> pl.DataFrame:
         (pl.col("wins_at_course") / pl.col("runs_at_course").clip(lower_bound=1)).alias("course_strike_rate")
     )
 
+    # ---- pedigree (sire / dam / damsire) — past-only cumulative win & place rates ----
+    placed = (pl.col("pos_num").is_not_null() & (pl.col("pos_num") <= 3)).cast(pl.Int32)
+    # null-safe keys: a missing sire must NOT group all nulls together
+    df = df.with_columns([
+        pl.col("sire").fill_null(pl.lit("__none_") + pl.col("horse_id").cast(pl.Utf8)).alias("_sire_key"),
+        pl.col("dam").fill_null(pl.lit("__none_") + pl.col("horse_id").cast(pl.Utf8)).alias("_dam_key"),
+        pl.col("damsire").fill_null(pl.lit("__none_") + pl.col("horse_id").cast(pl.Utf8)).alias("_damsire_key"),
+    ])
+    df = df.with_columns([
+        won.cum_sum().over("_sire_key").shift(1).fill_null(0).alias("_sire_wins"),
+        (pl.col("runner_id").cum_count().over("_sire_key") - 1).alias("_sire_runs"),
+        won.cum_sum().over("_dam_key").shift(1).fill_null(0).alias("_dam_wins"),
+        (pl.col("runner_id").cum_count().over("_dam_key") - 1).alias("_dam_runs"),
+        won.cum_sum().over("_damsire_key").shift(1).fill_null(0).alias("_damsire_wins"),
+        (pl.col("runner_id").cum_count().over("_damsire_key") - 1).alias("_damsire_runs"),
+        placed.cum_sum().over("_sire_key").shift(1).fill_null(0).alias("_sire_places"),
+        placed.cum_sum().over("_dam_key").shift(1).fill_null(0).alias("_dam_places"),
+    ])
+    df = df.with_columns([
+        (pl.col("_sire_wins") / pl.col("_sire_runs").clip(lower_bound=1)).alias("sire_win_rate"),
+        (pl.col("_dam_wins") / pl.col("_dam_runs").clip(lower_bound=1)).alias("dam_win_rate"),
+        (pl.col("_damsire_wins") / pl.col("_damsire_runs").clip(lower_bound=1)).alias("damsire_win_rate"),
+        (pl.col("_sire_places") / pl.col("_sire_runs").clip(lower_bound=1)).alias("sire_place_rate"),
+        (pl.col("_dam_places") / pl.col("_dam_runs").clip(lower_bound=1)).alias("dam_place_rate"),
+        (pl.col("official_rating") - pl.col("official_rating").shift(1).over("horse_id")).alias("or_change"),
+        (pl.col("age") >= 8).cast(pl.Int32).alias("is_veteran"),
+    ])
+    df = df.drop(["_sire_key", "_dam_key", "_damsire_key", "_sire_wins", "_sire_runs",
+                  "_dam_wins", "_dam_runs", "_damsire_wins", "_damsire_runs", "_sire_places", "_dam_places"])
+
     # ---- race context (pre-race) ----
     df = df.with_columns([
         pl.col("class").str.extract(r"(\d+)", 1).cast(pl.Int32, strict=False).fill_null(7).alias("class_numeric"),
@@ -163,6 +197,7 @@ def compute_features(df: pl.DataFrame) -> pl.DataFrame:
         pl.col("surface").cast(pl.Utf8).fill_null("").replace(SURFACE_MAP, default=0).cast(pl.Int32).alias("surface"),
         pl.col("going_grouped").cast(pl.Utf8).replace(GOING_GROUPED_MAP, default=4).cast(pl.Int32).alias("going_grouped"),
         pl.col("sex").cast(pl.Utf8).fill_null("").replace(SEX_MAP, default=0).cast(pl.Int32).alias("sex"),
+        (pl.col("class_numeric") - pl.col("class_numeric").shift(1).over("horse_id")).alias("class_step"),
     ])
 
     # ---- morning market features (decision-time) ----
@@ -190,6 +225,13 @@ def compute_features(df: pl.DataFrame) -> pl.DataFrame:
         pl.col("career_strike_rate").fill_null(0.0),
         pl.col("course_strike_rate").fill_null(0.0),
         pl.col("morning_prob").fill_null(1.0 / pl.col("field_size")),
+        pl.col("or_change").fill_null(0),
+        pl.col("class_step").fill_null(0),
+        pl.when(pl.col("sire_win_rate") > 0).then(pl.col("sire_win_rate")).otherwise(0.107).alias("sire_win_rate"),
+        pl.when(pl.col("dam_win_rate") > 0).then(pl.col("dam_win_rate")).otherwise(0.107).alias("dam_win_rate"),
+        pl.when(pl.col("damsire_win_rate") > 0).then(pl.col("damsire_win_rate")).otherwise(0.107).alias("damsire_win_rate"),
+        pl.when(pl.col("sire_place_rate") > 0).then(pl.col("sire_place_rate")).otherwise(0.28).alias("sire_place_rate"),
+        pl.when(pl.col("dam_place_rate") > 0).then(pl.col("dam_place_rate")).otherwise(0.28).alias("dam_place_rate"),
     ])
     return df
 
@@ -203,9 +245,11 @@ def build_dataset() -> pl.DataFrame:
         ru.horse_id, ru.trainer_id, ru.jockey_id, ru.num, ru.draw, ru.age, ru.sex,
         ru.lbs, ru.hg, ru.or AS official_rating,
         ru.win_bsp, ru.win_morningwap, ru.pos_num, ru.btn AS beaten_lengths, ru.rpr,
-        ru.win_flag AS won
+        ru.win_flag AS won,
+        b.sire_norm AS sire, b.dam_norm AS dam, b.damsire_norm AS damsire
     FROM racing.runners ru
     JOIN racing.races r ON r.race_id = ru.race_id
+    LEFT JOIN racing.bloodlines b ON b.blood_id = ru.blood_id
     WHERE r.race_date BETWEEN DATE '{date_from}' AND DATE '{date_to}'
       AND ru.horse_id IS NOT NULL
       AND ru.win_bsp IS NOT NULL AND ru.win_bsp >= 1.01

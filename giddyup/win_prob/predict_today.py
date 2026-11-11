@@ -181,6 +181,9 @@ def build_today(date_str, maps):
                     "beaten_lengths": None,
                     "rpr": None,
                     "won": 0,
+                    "sire": None,
+                    "dam": None,
+                    "damsire": None,
                     "name": name,
                     "jockey_name": (r.get("jockey") or {}).get("name"),
                     "trainer_name": (r.get("trainer") or {}).get("name"),
@@ -196,6 +199,7 @@ def build_today(date_str, maps):
         "race_type": pl.Utf8, "class": pl.Utf8, "going": pl.Utf8, "surface": pl.Utf8,
         "sex": pl.Utf8, "hg": pl.Utf8, "name": pl.Utf8, "jockey_name": pl.Utf8,
         "trainer_name": pl.Utf8, "course_name": pl.Utf8,
+        "sire": pl.Utf8, "dam": pl.Utf8, "damsire": pl.Utf8,
     }
     return pl.DataFrame(rows, schema_overrides=schema)
 
@@ -245,8 +249,10 @@ def main():
            r.race_type, r.class, r.dist_f, r.dist_m, r.going, r.surface, r.ran,
            ru.horse_id, ru.trainer_id, ru.jockey_id, ru.num, ru.draw, ru.age, ru.sex,
            ru.lbs, ru.hg, ru.or AS official_rating, ru.win_morningwap, ru.pos_num,
-           ru.btn AS beaten_lengths, ru.rpr, ru.win_flag AS won
+           ru.btn AS beaten_lengths, ru.rpr, ru.win_flag AS won,
+           b.sire_norm AS sire, b.dam_norm AS dam, b.damsire_norm AS damsire
     FROM racing.runners ru JOIN racing.races r ON r.race_id = ru.race_id
+    LEFT JOIN racing.bloodlines b ON b.blood_id = ru.blood_id
     WHERE r.race_date < DATE '{d}' AND ru.horse_id IS NOT NULL
     """.format(d=date_str)
     print("Loading historical form ...")
@@ -266,7 +272,8 @@ def main():
             "race_type", "class", "dist_f", "dist_m", "going", "surface", "ran",
             "horse_id", "trainer_id", "jockey_id", "num", "draw", "age", "sex",
             "lbs", "hg", "official_rating", "win_morningwap", "pos_num",
-            "beaten_lengths", "rpr", "won", "name", "jockey_name", "trainer_name", "course_name"]
+            "beaten_lengths", "rpr", "won", "sire", "dam", "damsire",
+            "name", "jockey_name", "trainer_name", "course_name"]
     today = today.select(cols)
     hist = hist.select(cols)
     # canonical dtypes so the vertical concat is type-safe
