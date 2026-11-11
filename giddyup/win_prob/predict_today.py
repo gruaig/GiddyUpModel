@@ -211,6 +211,7 @@ def main():
     ap.add_argument("--url", default=None, help="SL racecard URL (extracts date + race id)")
     ap.add_argument("--max-fair", type=float, default=20.0, help="drop long-shots with fair odds above this (default 20)")
     ap.add_argument("--margin", type=float, default=0.05, help="min edge for an action (default 0.05 = 5%)")
+    ap.add_argument("--place-margin", type=float, default=0.05, help="min PLACE-leg edge before an each-way fires (default 0.05)")
     ap.add_argument("--bank", type=float, default=1000.0, help="bankroll balance for stake sizing (default 1000)")
     ap.add_argument("--stake-pct", type=float, default=1.0, help="flat stake as % of bankroll (default 1%)")
     ap.add_argument("--drift-max", type=float, default=0.10, help="skip BACK bets predicted to drift more than this (log BSP/open; default 0.10)")
@@ -462,7 +463,7 @@ def main():
             fair = row["fair_odds"]
             drift = row["drift_score"]
             place_prob = row["place_prob"]
-            ew_edge = row["ew_edge"]
+            place_edge = row["place_edge"]
             n_pl = row["n_places"] if "n_places" in row else None
             ew_offered = n_pl is not None and n_pl >= 2  # each-way only when 2+ places paid
             bb_s = f"{bb:.2f}" if bb else "-"
@@ -471,7 +472,8 @@ def main():
             drift_s = "↓" if drift < -0.05 else ("↑" if drift > 0.05 else "–")
             act = _action(fair, bb, bl, drift)
             star = "★" if row["name"] in top_names and act in ("TAKE PRICE", "LAY") else " "
-            if act == "TAKE PRICE" and ew_offered and ew_edge is not None and ew_edge > args.margin:
+            # each-way only if the PLACE leg is itself meaningfully +EV (not just the win leg)
+            if act == "TAKE PRICE" and ew_offered and place_edge is not None and place_edge > args.place_margin:
                 bet = "EACH-WAY"
             else:
                 bet = {"TAKE PRICE": "BACK WIN", "LAY": "LAY", "DRIFTER": "AVOID", "LEAVE": "-", "NO BF": "-"}[act]
@@ -481,7 +483,7 @@ def main():
 
     print("\nFair = 1/win% (model's true price).  Place% = model's top-2/3/4 probability.  BF Back = live Betfair exchange back.")
     print("Drift: ↓ = predicted to shorten, ↑ = predicted to drift, – = flat.")
-    print(f"Bet = BACK WIN when BF Back >= Fair + {args.margin:.0%}; EACH-WAY when the place leg is also +EV; AVOID if predicted to drift > {args.drift_max:.0%}; LAY when BF Lay <= Fair - {args.margin:.0%}.")
+    print(f"Bet = BACK WIN when BF Back >= Fair + {args.margin:.0%}; EACH-WAY only when the PLACE leg is also >= {args.place_margin:.0%}; AVOID if predicted to drift > {args.drift_max:.0%}; LAY when BF Lay <= Fair - {args.margin:.0%}.")
     print(f"Stake = flat {args.stake_pct:.0f}% of £{args.bank:.0f} bank.  BACK uses that stake; LAY keeps the same LIABILITY (L£.., backer stake in brackets).")
     print(f"★ = the top {args.max_per_race} bet(s) per race (the ones to actually place).")
 
