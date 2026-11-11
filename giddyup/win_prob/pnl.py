@@ -40,22 +40,38 @@ def main():
     open_rows = []       # genuinely open (still unmatched, can cancel/take)
     matched_unsettled = []  # fully matched, race not settled yet
     try:
-        cur = c.betting.list_current_orders()
-        for o in (cur.orders or []):
+        cur = c.betting.list_current_orders(date_range=F.time_range(from_=start.isoformat(), to=end.isoformat()))
+        orders = cur.orders or []
+        # map selection_id -> runner name (current markets are still open, so catalogue works)
+        sel_to_name = {}
+        if orders:
+            mids = list({getattr(o, "market_id", "") for o in orders if getattr(o, "market_id", "")})
+            try:
+                mkts = c.betting.list_market_catalogue(
+                    filter=F.market_filter(market_ids=mids),
+                    max_results=1000, market_projection=["RUNNER_DESCRIPTION"])
+                for m in mkts:
+                    for r in m.runners:
+                        sel_to_name[r.selection_id] = r.runner_name
+            except Exception:
+                pass
+        for o in orders:
             ps = getattr(o, "price_size", None)
             price = getattr(ps, "price", 0) or 0
             size = getattr(ps, "size", 0) or 0
             remaining = getattr(o, "size_remaining", 0) or 0
+            sel = getattr(o, "selection_id", 0)
             row = {
                 "settled_at": str(getattr(o, "placed_date", "") or ""),
                 "market_id": str(getattr(o, "market_id", "") or ""),
-                "selection_id": str(getattr(o, "selection_id", "") or ""),
+                "selection_id": str(sel or ""),
                 "side": getattr(o, "side", "") or "",
                 "price": price, "stake": size,
                 "matched": getattr(o, "size_matched", 0) or 0,
                 "remaining": remaining,
                 "profit": 0.0,
                 "status": "OPEN" if remaining > 0 else "PLACED",
+                "name": sel_to_name.get(sel, ""),
             }
             if remaining > 0:
                 open_rows.append(row)
@@ -85,10 +101,11 @@ def main():
             "matched": getattr(o, "size_settled", 0) or 0,
             "remaining": 0,
             "profit": getattr(o, "profit", 0) or 0, "status": "SETTLED",
+            "name": "",
         })
 
     all_rows = open_rows + matched_unsettled + settled_rows
-    fields = ["settled_at", "market_id", "selection_id", "side", "price", "stake", "matched", "remaining", "profit", "status"]
+    fields = ["settled_at", "market_id", "selection_id", "side", "price", "stake", "matched", "remaining", "profit", "status", "name"]
     new = not BETS_CSV.exists()
     with BETS_CSV.open("a", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -100,17 +117,17 @@ def main():
     # ---- report ----
     if open_rows:
         print(f"\n=== OPEN OFFERS — unmatched, still in the market ({len(open_rows)}) ===")
-        print(f"{'side':5s} {'price':>7s} {'stake':>7s} {'matched':>7s} {'remaining':>9s}  {'placed':16s}")
+        print(f"{'side':5s} {'price':>7s} {'stake':>7s} {'matched':>7s} {'remaining':>9s}  {'placed':16s}  horse")
         for r in open_rows:
             dt_s = (r['settled_at'] or '')[:16]
-            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f} {r['matched']:>7.2f} {r['remaining']:>9.2f}  {dt_s}")
+            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f} {r['matched']:>7.2f} {r['remaining']:>9.2f}  {dt_s}  {r['name']}")
 
     if matched_unsettled:
         print(f"\n=== PLACED — matched, not settled yet ({len(matched_unsettled)}) ===")
-        print(f"{'side':5s} {'price':>7s} {'stake':>7s}  {'placed':16s}")
+        print(f"{'side':5s} {'price':>7s} {'stake':>7s}  {'placed':16s}  horse")
         for r in matched_unsettled:
             dt_s = (r['settled_at'] or '')[:16]
-            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f}  {dt_s}")
+            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f}  {dt_s}  {r['name']}")
 
     if settled_rows:
         tot = sum(r["profit"] for r in settled_rows)
