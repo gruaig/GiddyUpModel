@@ -100,15 +100,17 @@ def main():
     # ---- report ----
     if open_rows:
         print(f"\n=== OPEN OFFERS — unmatched, still in the market ({len(open_rows)}) ===")
-        print(f"{'side':5s} {'price':>7s} {'stake':>7s} {'matched':>7s} {'remaining':>9s}")
+        print(f"{'side':5s} {'price':>7s} {'stake':>7s} {'matched':>7s} {'remaining':>9s}  {'placed':16s}")
         for r in open_rows:
-            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f} {r['matched']:>7.2f} {r['remaining']:>9.2f}")
+            dt_s = (r['settled_at'] or '')[:16]
+            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f} {r['matched']:>7.2f} {r['remaining']:>9.2f}  {dt_s}")
 
     if matched_unsettled:
-        print(f"\n=== PLACED — matched, awaiting settlement ({len(matched_unsettled)}) ===")
-        print(f"{'side':5s} {'price':>7s} {'stake':>7s}")
+        print(f"\n=== PLACED — matched, not settled yet ({len(matched_unsettled)}) ===")
+        print(f"{'side':5s} {'price':>7s} {'stake':>7s}  {'placed':16s}")
         for r in matched_unsettled:
-            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f}")
+            dt_s = (r['settled_at'] or '')[:16]
+            print(f"{r['side']:5s} {r['price']:>7.2f} {r['stake']:>7.2f}  {dt_s}")
 
     if settled_rows:
         tot = sum(r["profit"] for r in settled_rows)
